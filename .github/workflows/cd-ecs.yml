@@ -13,6 +13,7 @@ env:
   ECS_TASK_DEFINITION: ${{ vars.ECS_TASK_DEFINITION }}
   CONTAINER_NAME: ${{ vars.CONTAINER_NAME }}
   TEST_IMAGE_NAME: xrpedia-ai-proxy-test
+  TEST_MONGODB_URL: ${{ secrets.TEST_MONGODB_URL }}
 permissions:
   contents: read
   id-token: write
@@ -49,6 +50,8 @@ jobs:
         id: run-test
         run: |
           docker run --rm \
+            -e MONGODB_URL=${{ env.TEST_MONGODB_URL }} \
+            -e AWS_REGION=${{ env.AWS_REGION }} \
             ${{ env.TEST_IMAGE_NAME }}
       
       - name: Build, tag, and push image to Amazon ECR
