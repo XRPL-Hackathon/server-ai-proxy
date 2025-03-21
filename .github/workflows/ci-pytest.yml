@@ -6,6 +6,7 @@ on:
 
 env:
   TEST_IMAGE_NAME: xrpedia-ai-proxy-test
+  TEST_MONGODB_URL: ${{ secrets.TEST_MONGODB_URL }}
 
 jobs:
   build:
@@ -22,4 +23,5 @@ jobs:
       id: run-test
       run: |
         docker run --rm \
+          -e MONGODB_URL=${{ env.TEST_MONGODB_URL }} \
           ${{ env.TEST_IMAGE_NAME }}
