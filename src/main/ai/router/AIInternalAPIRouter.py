@@ -12,15 +12,12 @@ router = APIRouter(
 )
 
 
-@router.post("/category-recommendations-results/{request_id}", response_model=CategoryRecommendationStatusResponse)
+@router.post("/category-recommendation-results/{request_id}", response_model=CategoryRecommendationStatusResponse)
 async def update_category_recommendation_result(
     request_id: str,
     request: CategoryRecommendationResultRequest,
     service: CategoryRecommendationService = Depends(get_category_recommendation_service)
 ):
-    """
-    (내부용) 자료 제목에 따른 추천 카테고리 조회 결과 저장
-    """
     result = service.update_recommendation_result(request_id, request)
     
     if not result:
