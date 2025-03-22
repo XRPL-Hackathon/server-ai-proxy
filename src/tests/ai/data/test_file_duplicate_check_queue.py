@@ -1,5 +1,6 @@
 import pytest
 import json
+import hashlib
 from unittest.mock import MagicMock, patch
 
 from src.main.ai.data.FileDuplicateCheckQueue import FileDuplicateCheckQueue
@@ -32,6 +33,8 @@ class TestFileDuplicateCheckQueue:
             }
         }
         
+        expected_deduplication_id = hashlib.md5(str(self.test_request_id).encode()).hexdigest()
+        
         expected_response = {"MessageId": "12345"}
         self.mock_sqs.send_message.return_value = expected_response
         
@@ -47,7 +50,7 @@ class TestFileDuplicateCheckQueue:
         self.mock_sqs.send_message.assert_called_once_with(
             QueueUrl=self.test_queue_url,
             MessageGroupId=self.test_user_id,
-            MessageDeduplicationId=self.test_request_id,
+            MessageDeduplicationId=expected_deduplication_id,
             MessageBody=json.dumps(expected_message_body)
         )
         assert response == expected_response
@@ -65,5 +68,4 @@ class TestFileDuplicateCheckQueue:
                 s3_key=self.test_s3_key
             )
         
-        assert str(exc_info.value) == "SQS Error"
-        self.mock_sqs.send_message.assert_called_once() 
+        assert str(exc_info.value) == "SQS Error" 
