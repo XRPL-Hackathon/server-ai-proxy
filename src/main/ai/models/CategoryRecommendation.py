@@ -4,7 +4,7 @@ from typing import Optional
 
 
 class CategoryRecommendationRequest(BaseModel):
-    title: str
+    file_id: str
 
 
 class CategoryRecommendationResponse(BaseModel):
