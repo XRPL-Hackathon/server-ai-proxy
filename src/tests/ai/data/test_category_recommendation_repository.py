@@ -32,7 +32,7 @@ class TestCategoryRecommendationRepository:
     
     def test_create_recommendation_request(self):
         # given
-        title = "테스트 제목"
+        file_id = "67dd86ac60a0a6d929904d47"
         user_id = "test-user-id"
         mock_id = ObjectId("6123456789abcdef01234567")
         
@@ -40,11 +40,11 @@ class TestCategoryRecommendationRepository:
         self.mock_collection.insert_one.return_value = MagicMock(inserted_id=mock_id)
         
         # when
-        result = self.repository.create_recommendation_request(title, user_id)
+        result = self.repository.create_recommendation_request(file_id, user_id)
         
         # then
         expected_doc = {
-            "title": title,
+            "file_id": file_id,
             "user_id": user_id,
             "is_completed": False,
             "created_at": datetime(2023, 1, 1, tzinfo=timezone.utc),
@@ -61,7 +61,7 @@ class TestCategoryRecommendationRepository:
         user_id = "test-user-id"
         expected_result = {
             "_id": ObjectId(request_id),
-            "title": "테스트 제목",
+            "file_id": "67dd86ac60a0a6d929904d47",
             "user_id": user_id,
             "is_completed": False,
             "created_at": datetime(2023, 1, 1, tzinfo=timezone.utc)
@@ -102,7 +102,7 @@ class TestCategoryRecommendationRepository:
         
         expected_doc = {
             "_id": ObjectId(request_id),
-            "title": "테스트 제목",
+            "file_id": "67dd86ac60a0a6d929904d47",
             "user_id": "test-user-id",
             "is_completed": True,
             "predicted_category": predicted_category,
