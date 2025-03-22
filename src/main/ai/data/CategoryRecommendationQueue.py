@@ -11,14 +11,14 @@ class CategoryRecommendationQueue:
         self.sqs = sqs_client
         self.queue_url = queue_url
 
-    def send_message(self, request_id: str, title: str, user_id: str):
+    def send_message(self, request_id: str, file_id: str, user_id: str):
         try:
             message_body = {
                 'request_type': 'category_recommendation',
                 'request_id': request_id,
                 'user_id': str(user_id),
                 'payload': {
-                    'title': title
+                    'file_id': file_id
                 }
             }
             
