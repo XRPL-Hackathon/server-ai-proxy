@@ -23,19 +23,19 @@ class TestCategoryRecommendationService:
         self.service = CategoryRecommendationService(self.mock_repository, self.mock_queue)
         
         # 테스트 공통 데이터
-        self.test_title = "테스트 제목"
+        self.test_file_id = "67dd86ac60a0a6d929904d47"
         self.test_user_id = uuid.UUID("12345678-1234-5678-1234-567812345678")
         self.test_request_id = "6123456789abcdef01234567"
         self.test_object_id = ObjectId(self.test_request_id)
     
     def test_create_recommendation_request(self):
         # given
-        request = CategoryRecommendationRequest(title=self.test_title)
+        request = CategoryRecommendationRequest(file_id=self.test_file_id)
         
         # 리포지토리 응답 설정
         mongo_document = {
             "_id": self.test_object_id,
-            "title": self.test_title,
+            "file_id": self.test_file_id,
             "user_id": str(self.test_user_id),
             "is_completed": False,
             "created_at": datetime(2023, 1, 1, tzinfo=timezone.utc)
@@ -47,13 +47,13 @@ class TestCategoryRecommendationService:
         
         # then
         self.mock_repository.create_recommendation_request.assert_called_once_with(
-            title=self.test_title,
+            file_id=self.test_file_id,
             user_id=str(self.test_user_id)
         )
         
         self.mock_queue.send_message.assert_called_once_with(
             request_id=self.test_request_id,
-            title=self.test_title,
+            file_id=self.test_file_id,
             user_id=str(self.test_user_id)
         )
         
@@ -65,7 +65,7 @@ class TestCategoryRecommendationService:
         # 리포지토리 응답 설정 - 완료되지 않은 추천
         mongo_document = {
             "_id": self.test_object_id,
-            "title": self.test_title,
+            "file_id": self.test_file_id,
             "user_id": str(self.test_user_id),
             "is_completed": False,
             "created_at": datetime(2023, 1, 1, tzinfo=timezone.utc)
@@ -90,7 +90,7 @@ class TestCategoryRecommendationService:
         # 리포지토리 응답 설정 - 완료된 추천
         mongo_document = {
             "_id": self.test_object_id,
-            "title": self.test_title,
+            "file_id": self.test_file_id,
             "user_id": str(self.test_user_id),
             "is_completed": True,
             "predicted_category": "기술",
@@ -134,7 +134,7 @@ class TestCategoryRecommendationService:
         # 리포지토리 응답 설정
         updated_document = {
             "_id": self.test_object_id,
-            "title": self.test_title,
+            "file_id": self.test_file_id,
             "user_id": str(self.test_user_id),
             "is_completed": True,
             "predicted_category": "기술",
