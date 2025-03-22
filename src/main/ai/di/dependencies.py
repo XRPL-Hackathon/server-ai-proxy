@@ -49,7 +49,7 @@ def get_file_duplicate_check_queue():
     else:
         sqs_client = boto3.client('sqs', region_name=os.getenv('AWS_REGION'))
 
-    queue_url = os.getenv('SQS_FILE_DUPLICATE_CHECK_QUEUE_URL')
+    queue_url = os.getenv('SQS_REQUEST_QUEUE_URL')
     return FileDuplicateCheckQueue(sqs_client, queue_url)
 
 
