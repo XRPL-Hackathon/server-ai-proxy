@@ -18,4 +18,5 @@ class CategoryRecommendationStatusResponse(BaseModel):
 
 
 class CategoryRecommendationResultRequest(BaseModel):
+    request_id: Optional[str] = None
     predicted_category: str 
