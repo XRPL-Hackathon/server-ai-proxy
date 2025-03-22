@@ -34,15 +34,15 @@ def client():
 class TestAIPublicAPIRouter:
     def setup_method(self):
         # 테스트 공통 데이터
-        self.test_title = "테스트 제목"
+        self.test_file_id = "67dd86ac60a0a6d929904d47"
         self.test_user_id = uuid.UUID("12345678-1234-5678-1234-567812345678")
         self.test_request_id = "6123456789abcdef01234567"
-        self.test_file_id = "7123456789abcdef01234567"
+        self.test_check_file_id = "7123456789abcdef01234567"
     
     def test_create_category_recommendation_request(self, client):
         # given
         request_data = {
-            "title": self.test_title
+            "file_id": self.test_file_id
         }
         
         # 서비스 응답 모의 설정
@@ -107,23 +107,23 @@ class TestAIPublicAPIRouter:
             # 서비스 응답 설정
             mock_service.return_value = FileDuplicateCheckStatusResponse(
                 request_id=self.test_request_id,
-                file_id=self.test_file_id,
+                file_id=self.test_check_file_id,
                 is_completed=True,
                 is_duplicated=False
             )
             
             # when
-            response = client.get(f"/ai/file-duplicate-checks?file_id={self.test_file_id}")
+            response = client.get(f"/ai/file-duplicate-checks?file_id={self.test_check_file_id}")
             
             # then
             assert response.status_code == 200
             assert response.json() == {
                 "request_id": self.test_request_id,
-                "file_id": self.test_file_id,
+                "file_id": self.test_check_file_id,
                 "is_completed": True,
                 "is_duplicated": False
             }
-            mock_service.assert_called_once_with(self.test_file_id, str(self.test_user_id))
+            mock_service.assert_called_once_with(self.test_check_file_id, str(self.test_user_id))
     
     def test_get_file_duplicate_check_status_not_found(self, client):
         # given
@@ -133,11 +133,11 @@ class TestAIPublicAPIRouter:
             mock_service.return_value = None
             
             # when
-            response = client.get(f"/ai/file-duplicate-checks?file_id={self.test_file_id}")
+            response = client.get(f"/ai/file-duplicate-checks?file_id={self.test_check_file_id}")
             
             # then
             assert response.status_code == 404
             assert response.json() == {
                 "detail": "요청을 찾을 수 없습니다. 존재하지 않는 ID입니다."
             }
-            mock_service.assert_called_once_with(self.test_file_id, str(self.test_user_id)) 
+            mock_service.assert_called_once_with(self.test_check_file_id, str(self.test_user_id)) 

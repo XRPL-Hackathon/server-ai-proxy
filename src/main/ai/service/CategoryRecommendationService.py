@@ -20,7 +20,7 @@ class CategoryRecommendationService:
     def create_recommendation_request(self, request: CategoryRecommendationRequest, user_id: uuid.UUID) -> CategoryRecommendationResponse:
         # MongoDB에 저장 - ObjectId 자동 생성
         document = self.repository.create_recommendation_request(
-            title=request.title,
+            file_id=request.file_id,
             user_id=str(user_id)
         )
         
@@ -30,7 +30,7 @@ class CategoryRecommendationService:
         # 메시지 발행
         self.queue.send_message(
             request_id=request_id,
-            title=request.title,
+            file_id=request.file_id,
             user_id=str(user_id)
         )
         

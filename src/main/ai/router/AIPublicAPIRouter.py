@@ -22,7 +22,7 @@ async def create_category_recommendation_request(
     service: CategoryRecommendationService = Depends(get_category_recommendation_service)
 ):
     """
-    자료 제목에 따른 추천 카테고리 요청
+    업로드한 파일에 따른 추천 카테고리 요청
     """
     return service.create_recommendation_request(request, user_id)
 
@@ -34,7 +34,7 @@ async def get_category_recommendation_status(
     service: CategoryRecommendationService = Depends(get_category_recommendation_service)
 ):
     """
-    자료 제목에 따른 추천 카테고리 조회
+    업로드한 파일에 따른 추천 카테고리 조회
     """
     result = service.get_recommendation_status(request_id, user_id)
     

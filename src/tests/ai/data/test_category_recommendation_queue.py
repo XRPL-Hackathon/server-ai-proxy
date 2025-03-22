@@ -16,7 +16,7 @@ class TestCategoryRecommendationQueue:
     def test_send_message_success(self):
         # given
         request_id = "test-request-id"
-        title = "테스트 제목"
+        file_id = "67dd86ac60a0a6d929904d47"
         user_id = "test-user-id"
         
         # SQS 응답 설정
@@ -24,7 +24,7 @@ class TestCategoryRecommendationQueue:
         self.mock_sqs_client.send_message.return_value = expected_response
         
         # when
-        result = self.queue.send_message(request_id, title, user_id)
+        result = self.queue.send_message(request_id, file_id, user_id)
         
         # then
         expected_message_body = {
@@ -32,7 +32,7 @@ class TestCategoryRecommendationQueue:
             'request_id': request_id,
             'user_id': user_id,
             'payload': {
-                'title': title
+                'file_id': file_id
             }
         }
         
@@ -47,7 +47,7 @@ class TestCategoryRecommendationQueue:
     def test_send_message_with_exception(self):
         # given
         request_id = "test-request-id"
-        title = "테스트 제목"
+        file_id = "67dd86ac60a0a6d929904d47"
         user_id = "test-user-id"
         
         # SQS 예외 발생 설정
@@ -55,7 +55,7 @@ class TestCategoryRecommendationQueue:
         
         # when/then
         with pytest.raises(Exception) as e:
-            self.queue.send_message(request_id, title, user_id)
+            self.queue.send_message(request_id, file_id, user_id)
         
         assert "SQS error" in str(e.value)
         
@@ -64,7 +64,7 @@ class TestCategoryRecommendationQueue:
             'request_id': request_id,
             'user_id': user_id,
             'payload': {
-                'title': title
+                'file_id': file_id
             }
         }
         

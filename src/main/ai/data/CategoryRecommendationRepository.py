@@ -10,9 +10,9 @@ class CategoryRecommendationRepository:
         self.db = client.get_database()
         self.collection: Collection = self.db.get_collection('category_recommendations')
 
-    def create_recommendation_request(self, title: str, user_id: str) -> dict:
+    def create_recommendation_request(self, file_id: str, user_id: str) -> dict:
         document = {
-            "title": title,
+            "file_id": file_id,
             "user_id": user_id,
             "is_completed": False,
             "created_at": self.get_current_time()
