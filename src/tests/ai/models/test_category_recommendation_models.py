@@ -13,16 +13,16 @@ from src.main.ai.models.CategoryRecommendation import (
 class TestCategoryRecommendationModels:
     def test_category_recommendation_request_valid(self):
         # given
-        title = "테스트 제목"
+        file_id = "67dd86ac60a0a6d929904d47"
         
         # when
-        model = CategoryRecommendationRequest(title=title)
+        model = CategoryRecommendationRequest(file_id=file_id)
         
         # then
-        assert model.title == title
+        assert model.file_id == file_id
     
     def test_category_recommendation_request_invalid(self):
-        # when/then - 제목이 없는 경우 검증 오류
+        # when/then - 파일 ID가 없는 경우 검증 오류
         with pytest.raises(ValidationError):
             CategoryRecommendationRequest()
     
