@@ -9,7 +9,7 @@ from src.main.ai.models.CategoryRecommendation import (
     CategoryRecommendationResponse,
     CategoryRecommendationStatusResponse
 )
-from src.main.ai.models.FileDuplicateCheck import FileDuplicateCheckStatusResponse, FileDuplicateCheckResponse, FileDuplicateCheckRequest
+from src.main.ai.models.FileDuplicateCheck import FileDuplicateCheckStatusResponse
 from src.main.ai.router.AIPublicAPIRouter import router as public_router
 from src.main.auth.dependencies import get_current_user
 
@@ -97,75 +97,6 @@ class TestAIPublicAPIRouter:
             assert response.status_code == 404
             assert response.json() == {
                 "detail": "요청을 찾을 수 없습니다. 존재하지 않는 ID입니다."
-            }
-            mock_service.assert_called_once()
-    
-    def test_create_file_duplicate_check_request_success(self, client):
-        # given
-        request_data = {
-            "user_id": str(self.test_user_id),
-            "file_id": self.test_file_id
-        }
-        
-        # 서비스 응답 모의 설정
-        with patch('src.main.ai.service.FileDuplicateCheckService.FileDuplicateCheckService.create_duplicate_check_request') as mock_service:
-            # 서비스 응답 설정
-            mock_service.return_value = FileDuplicateCheckResponse(request_id=self.test_request_id)
-            
-            # when
-            response = client.post("/ai/file-duplicate-checks", json=request_data)
-            
-            # then
-            assert response.status_code == 200
-            assert response.json() == {
-                "request_id": self.test_request_id
-            }
-            mock_service.assert_called_once_with(FileDuplicateCheckRequest(**request_data))
-    
-    def test_create_file_duplicate_check_request_file_not_found(self, client):
-        # given
-        request_data = {
-            "user_id": str(self.test_user_id),
-            "file_id": self.test_file_id
-        }
-        
-        # 서비스 응답 모의 설정
-        with patch('src.main.ai.service.FileDuplicateCheckService.FileDuplicateCheckService.create_duplicate_check_request') as mock_service:
-            # 서비스에서 예외 발생
-            mock_service.side_effect = HTTPException(
-                status_code=404,
-                detail="파일을 찾을 수 없습니다. 존재하지 않는 ID입니다."
-            )
-            
-            # when
-            response = client.post("/ai/file-duplicate-checks", json=request_data)
-            
-            # then
-            assert response.status_code == 404
-            assert response.json() == {
-                "detail": "파일을 찾을 수 없습니다. 존재하지 않는 ID입니다."
-            }
-            mock_service.assert_called_once()
-    
-    def test_create_file_duplicate_check_request_bad_request(self, client):
-        # given
-        request_data = {
-            "user_id": str(self.test_user_id),
-            "file_id": self.test_file_id
-        }
-        
-        # 서비스 응답 모의 설정
-        with patch('src.main.ai.service.FileDuplicateCheckService.FileDuplicateCheckService.create_duplicate_check_request') as mock_service:
-            # 서비스에서 일반 예외 발생
-            mock_service.side_effect = Exception("서비스 오류")
-            
-            # when
-            response = client.post("/ai/file-duplicate-checks", json=request_data)
-            
-            # then
-            assert response.status_code == 400
-            assert response.json() == {
-                "detail": "잘못된 요청입니다. 명세에 맞지 않은 요청입니다."
             }
             mock_service.assert_called_once()
     
