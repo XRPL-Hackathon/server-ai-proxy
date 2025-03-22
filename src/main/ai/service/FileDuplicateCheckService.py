@@ -53,16 +53,15 @@ class FileDuplicateCheckService:
             "s3_key": file["s3_key"]
         }
         
-        message = {
-            "request_type": "file_duplicate_check_embedding_file",
-            "request_id": str(result["_id"]),
-            "user_id": request.user_id,
-            "payload": file_data
-        }
+        message_id = str(result["_id"])
+        logger.info(f"SQS 메시지 발송 준비: request_id: {message_id}, user_id: {request.user_id}, s3_bucket: {file['s3_bucket']}, s3_key: {file['s3_key']}")
         
-        message_json = json.dumps(message)
-        logger.info(f"SQS 메시지 발송: {message_json}")
-        response = self.sqs_service.send_message(message_json)
+        response = self.sqs_service.send_message(
+            request_id=message_id,
+            user_id=request.user_id,
+            s3_bucket=file["s3_bucket"],
+            s3_key=file["s3_key"]
+        )
         logger.info(f"SQS 메시지 발송 응답: {response}")
         
         # 5. 요청 ID 응답
