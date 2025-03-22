@@ -11,9 +11,19 @@ class TestFileDuplicateCheckRepository:
         # 목업 MongoDB 클라이언트 생성
         self.mock_collection = MagicMock()
         self.mock_files_collection = MagicMock()
+        self.mock_embeddings_collection = MagicMock()
         self.mock_db = MagicMock()
-        self.mock_db.get_collection.side_effect = lambda name: self.mock_collection if name == 'file_duplicate_checks' else self.mock_files_collection
         
+        # 컬렉션 이름에 따라 적절한 mock 객체 반환
+        def get_collection_side_effect(name):
+            if name == 'file_duplicate_checks':
+                return self.mock_collection
+            elif name == 'files':
+                return self.mock_files_collection
+            elif name == 'file_embeddings':
+                return self.mock_embeddings_collection
+            
+        self.mock_db.get_collection.side_effect = get_collection_side_effect
         self.mock_client = MagicMock()
         self.mock_client.get_database.return_value = self.mock_db
         
@@ -45,6 +55,17 @@ class TestFileDuplicateCheckRepository:
             "created_at": self.test_time
         }
         self.mock_collection.insert_one.return_value.inserted_id = self.test_object_id
+        
+        # mock find_one 결과 설정
+        expected_result = {
+            "_id": self.test_object_id,
+            "file_id": self.test_file_id,
+            "user_id": self.test_user_id,
+            "is_completed": False,
+            "is_duplicated": None,
+            "created_at": self.test_time
+        }
+        self.mock_collection.find_one.return_value = expected_result
         
         # when
         result = self.repository.create_duplicate_check_request(self.test_file_id, self.test_user_id)
