@@ -37,20 +37,8 @@ async def create_file_duplicate_check(
     request: FileDuplicateCheckRequest,
     service: FileDuplicateCheckService = Depends(get_file_duplicate_check_service)
 ):
-    try:
-        result = service.create_duplicate_check_request(request)
-        return result
-    except HTTPException as e:
-        raise e
-    except Exception as e:
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content={
-                "status": 400,
-                "message": "잘못된 요청입니다.",
-                "detail": "명세에 맞지 않은 요청입니다."
-            }
-        )
+    result = service.create_duplicate_check_request(request)
+    return result
 
 
 @router.post("/file-duplicate-check-embeddings", response_model=dict)
