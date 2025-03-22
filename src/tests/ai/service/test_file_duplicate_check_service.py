@@ -10,7 +10,7 @@ from src.main.ai.models.FileDuplicateCheck import (
     FileDuplicateCheckRequest,
     FileDuplicateCheckResponse,
     FileDuplicateCheckStatusResponse,
-    FileDuplicateCheckEmbeddingsRequest
+    FileDuplicateCheckResultRequest
 )
 
 
@@ -29,6 +29,7 @@ class TestFileDuplicateCheckService:
         self.test_request_id = "7123456789abcdef01234567"
         self.test_object_id = ObjectId(self.test_request_id)
         self.test_file_object_id = ObjectId(self.test_file_id)
+        self.test_time = datetime(2023, 1, 1, tzinfo=timezone.utc)
     
     def test_create_duplicate_check_request_success(self):
         # given
@@ -40,10 +41,15 @@ class TestFileDuplicateCheckService:
         # 파일 존재함
         file_document = {
             "_id": self.test_file_object_id,
+            "s3_bucket": "test-bucket",
+            "s3_key": "example.pdf",
             "file_key": "example.pdf",
             "s3_url": "https://bucket.s3.amazonaws.com/example.pdf"
         }
         self.mock_repository.get_file_by_id.return_value = file_document
+        
+        # 기존 요청 없음
+        self.mock_repository.get_duplicate_check_by_file_id.return_value = None
         
         # 요청 생성 응답
         mongo_document = {
@@ -52,7 +58,7 @@ class TestFileDuplicateCheckService:
             "user_id": self.test_user_id,
             "is_completed": False,
             "is_duplicated": None,
-            "created_at": datetime(2023, 1, 1, tzinfo=timezone.utc)
+            "created_at": self.test_time
         }
         self.mock_repository.create_duplicate_check_request.return_value = mongo_document
         
@@ -61,6 +67,7 @@ class TestFileDuplicateCheckService:
         
         # then
         self.mock_repository.get_file_by_id.assert_called_once_with(self.test_file_id)
+        self.mock_repository.get_duplicate_check_by_file_id.assert_called_once_with(self.test_file_id, self.test_user_id)
         self.mock_repository.create_duplicate_check_request.assert_called_once_with(
             file_id=self.test_file_id,
             user_id=self.test_user_id
@@ -69,6 +76,46 @@ class TestFileDuplicateCheckService:
         
         assert isinstance(result, FileDuplicateCheckResponse)
         assert result.request_id == str(self.test_object_id)
+    
+    def test_create_duplicate_check_request_existing_request(self):
+        # given
+        request = FileDuplicateCheckRequest(
+            user_id=self.test_user_id,
+            file_id=self.test_file_id
+        )
+        
+        # 파일 존재함
+        file_document = {
+            "_id": self.test_file_object_id,
+            "s3_bucket": "test-bucket",
+            "s3_key": "example.pdf",
+            "file_key": "example.pdf",
+            "s3_url": "https://bucket.s3.amazonaws.com/example.pdf"
+        }
+        self.mock_repository.get_file_by_id.return_value = file_document
+        
+        # 이미 요청이 존재함
+        existing_check = {
+            "_id": self.test_object_id,
+            "file_id": self.test_file_id,
+            "user_id": self.test_user_id,
+            "is_completed": False,
+            "is_duplicated": None,
+            "created_at": self.test_time
+        }
+        self.mock_repository.get_duplicate_check_by_file_id.return_value = existing_check
+        
+        # when & then
+        with pytest.raises(HTTPException) as exc_info:
+            self.service.create_duplicate_check_request(request)
+        
+        assert exc_info.value.status_code == 400
+        assert exc_info.value.detail == "이미 중복 검사 요청이 존재합니다."
+        
+        self.mock_repository.get_file_by_id.assert_called_once_with(self.test_file_id)
+        self.mock_repository.get_duplicate_check_by_file_id.assert_called_once_with(self.test_file_id, self.test_user_id)
+        self.mock_repository.create_duplicate_check_request.assert_not_called()
+        self.mock_queue.send_message.assert_not_called()
     
     def test_create_duplicate_check_request_file_not_found(self):
         # given
@@ -86,6 +133,7 @@ class TestFileDuplicateCheckService:
         
         assert exc_info.value.status_code == 404
         self.mock_repository.get_file_by_id.assert_called_once_with(self.test_file_id)
+        self.mock_repository.get_duplicate_check_by_file_id.assert_not_called()
         self.mock_repository.create_duplicate_check_request.assert_not_called()
         self.mock_queue.send_message.assert_not_called()
     
@@ -98,7 +146,7 @@ class TestFileDuplicateCheckService:
             "user_id": self.test_user_id,
             "is_completed": False,
             "is_duplicated": None,
-            "created_at": datetime(2023, 1, 1, tzinfo=timezone.utc)
+            "created_at": self.test_time
         }
         self.mock_repository.get_duplicate_check_by_file_id.return_value = mongo_document
         
@@ -126,7 +174,7 @@ class TestFileDuplicateCheckService:
             "user_id": self.test_user_id,
             "is_completed": True,
             "is_duplicated": False,
-            "created_at": datetime(2023, 1, 1, tzinfo=timezone.utc)
+            "created_at": self.test_time
         }
         self.mock_repository.get_duplicate_check_by_file_id.return_value = mongo_document
         
@@ -163,10 +211,7 @@ class TestFileDuplicateCheckService:
     
     def test_update_duplicate_check_result_success(self):
         # given
-        request = FileDuplicateCheckEmbeddingsRequest(
-            request_id=self.test_request_id,
-            embeddings=[1.0, 2.0, 3.0]
-        )
+        is_duplicated = False
         
         # 요청이 존재함
         check_document = {
@@ -175,9 +220,17 @@ class TestFileDuplicateCheckService:
             "user_id": self.test_user_id,
             "is_completed": False,
             "is_duplicated": None,
-            "created_at": datetime(2023, 1, 1, tzinfo=timezone.utc)
+            "created_at": self.test_time
         }
         self.mock_repository.get_duplicate_check_by_id.return_value = check_document
+        
+        # 파일 중복 상태 업데이트 성공
+        self.mock_repository.update_file_duplicate_status.return_value = {
+            "_id": self.test_file_object_id,
+            "s3_bucket": "test-bucket", 
+            "s3_key": "example.pdf",
+            "is_duplicated": False
+        }
         
         # 업데이트 응답
         updated_document = {
@@ -186,42 +239,37 @@ class TestFileDuplicateCheckService:
             "user_id": self.test_user_id,
             "is_completed": True,
             "is_duplicated": False,
-            "created_at": datetime(2023, 1, 1, tzinfo=timezone.utc),
+            "created_at": self.test_time,
             "updated_at": datetime(2023, 1, 2, tzinfo=timezone.utc)
         }
         self.mock_repository.update_duplicate_check_result.return_value = updated_document
         
         # when
-        result = self.service.update_duplicate_check_result(self.test_request_id, request)
+        result = self.service.update_duplicate_check_result(self.test_request_id, is_duplicated)
         
         # then
         self.mock_repository.get_duplicate_check_by_id.assert_called_once_with(self.test_request_id)
+        self.mock_repository.update_file_duplicate_status.assert_called_once_with(self.test_file_id, is_duplicated)
         self.mock_repository.update_duplicate_check_result.assert_called_once_with(
             request_id=self.test_request_id,
-            is_duplicated=False
+            is_duplicated=is_duplicated
         )
         
-        assert isinstance(result, FileDuplicateCheckStatusResponse)
-        assert result.request_id == str(self.test_object_id)
-        assert result.file_id == self.test_file_id
-        assert result.is_completed == True
-        assert result.is_duplicated == False
+        assert result == True
     
     def test_update_duplicate_check_result_not_found(self):
         # given
-        request = FileDuplicateCheckEmbeddingsRequest(
-            request_id=self.test_request_id,
-            embeddings=[1.0, 2.0, 3.0]
-        )
+        is_duplicated = False
         
         # 요청이 존재하지 않음
         self.mock_repository.get_duplicate_check_by_id.return_value = None
         
         # when
-        result = self.service.update_duplicate_check_result(self.test_request_id, request)
+        result = self.service.update_duplicate_check_result(self.test_request_id, is_duplicated)
         
         # then
         self.mock_repository.get_duplicate_check_by_id.assert_called_once_with(self.test_request_id)
+        self.mock_repository.update_file_duplicate_status.assert_not_called()
         self.mock_repository.update_duplicate_check_result.assert_not_called()
         
-        assert result is None 
+        assert result == False 
